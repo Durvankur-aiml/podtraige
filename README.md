@@ -174,12 +174,12 @@ kubectl logs job/manual-scan-01
 | Field | Detail |
 | :--- | :--- |
 | **Project Name** | `podtriage` - Kubernetes Pod Health & Incident Triage Engine |
-| **Course / Subject** | DevOps and Kubernetes |
+| **Subject** | DevOps and Kubernetes (ISE-2) |
 | **Assessment** | In-Semester Evaluation 2 (ISE-2) |
-| **Author / Developer** | Durvankur Tibile |
+| **Student Name** | Paras Sarnobat |
 | **Repository URL** | [https://github.com/Durvankur-aiml/podtraige.git](https://github.com/Durvankur-aiml/podtraige.git) |
 | **Repository Branch** | `main` |
-| **Commit Target** | 4 Sequential Semantic Commits (Core CLI, Docker, Kubernetes, CI/CD Docs) |
+| **Commit Target** | Sequential Semantic Commits (Core CLI, Docker, Kubernetes, CI/CD Docs) |
 
 ---
 
