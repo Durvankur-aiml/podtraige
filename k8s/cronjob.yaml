@@ -1,0 +1,43 @@
+# ==============================================================================
+# Podtriage Scheduled Scan - CronJob for Cluster Pod Incident Triage
+# ==============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: podtriage-scheduled-scan
+  namespace: default
+  labels:
+    app.kubernetes.io/name: podtriage
+    app.kubernetes.io/part-of: podtriage
+    app.kubernetes.io/component: scanner-cronjob
+spec:
+  schedule: "*/15 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: podtriage
+            app.kubernetes.io/component: scanner
+        spec:
+          serviceAccountName: podtriage-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: podtriage
+              image: podtriage:v1.0
+              imagePullPolicy: IfNotPresent
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "64Mi"
+                limits:
+                  cpu: "100m"
+                  memory: "128Mi"
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                runAsUser: 10001

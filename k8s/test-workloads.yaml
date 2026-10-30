@@ -1,0 +1,43 @@
+# ==============================================================================
+# Sample Test Workload - Degraded Pod Simulation (OOMKilled & CrashLoopBackOff)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-oom
+  namespace: default
+  labels:
+    app.kubernetes.io/name: auth-service-oom
+    app.kubernetes.io/part-of: podtriage-test-suite
+    app.kubernetes.io/component: degraded-workload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service-oom
+  template:
+    metadata:
+      labels:
+        app: auth-service-oom
+    spec:
+      containers:
+        - name: auth-service
+          image: python:3.11-alpine
+          command:
+            - python
+            - -c
+            - |
+              import sys, time
+              print("[auth-service] Initializing auth tokens & cache...")
+              time.sleep(2)
+              print("[auth-service] Simulating burst traffic memory leak...")
+              # Exceed 16Mi cgroup memory ceiling to trigger kernel OOMKill (Exit 137)
+              data = bytearray(32 * 1024 * 1024)
+              print(f"[auth-service] Allocated: {len(data)} bytes")
+          resources:
+            requests:
+              cpu: 50m
+              memory: 8Mi
+            limits:
+              cpu: 100m
+              memory: 16Mi

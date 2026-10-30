@@ -1,0 +1,56 @@
+# ==============================================================================
+# Podtriage RBAC - Cluster Read-Only Permissions for Pod & Incident Diagnostics
+# ==============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: podtriage-sa
+  namespace: default
+  labels:
+    app.kubernetes.io/name: podtriage
+    app.kubernetes.io/part-of: podtriage
+    app.kubernetes.io/component: rbac
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podtriage-reader
+  labels:
+    app.kubernetes.io/name: podtriage
+    app.kubernetes.io/part-of: podtriage
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - pods/status
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups: ["events.k8s.io"]
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: podtriage-reader-binding
+  labels:
+    app.kubernetes.io/name: podtriage
+    app.kubernetes.io/part-of: podtriage
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: podtriage-reader
+subjects:
+  - kind: ServiceAccount
+    name: podtriage-sa
+    namespace: default
