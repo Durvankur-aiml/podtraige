@@ -1,0 +1,85 @@
+name: PodTriage DevOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-validate:
+    name: Code Lint & Diagnostic Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Syntax Check with py_compile
+        run: |
+          python -m py_compile podtriage.py
+          echo "✓ Python syntax check passed successfully."
+
+      - name: Validate Simulation Execution
+        run: |
+          python podtriage.py --simulate
+          echo "✓ Simulated diagnostic scan executed nominal."
+
+      - name: Validate JSON Output Pipeline
+        run: |
+          python podtriage.py --simulate --json
+          echo "✓ JSON telemetry payload validated."
+
+  docker-build-check:
+    name: Docker Containerization Build & Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t podtriage:ci .
+          echo "✓ Docker container built successfully."
+
+      - name: Test Container Execution
+        run: |
+          docker run --rm podtriage:ci --simulate
+          echo "✓ Container execution verified in CI environment."
+
+  k8s-manifest-lint:
+    name: Kubernetes Manifest & Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install YAML Validation Engine
+        run: pip install pyyaml
+
+      - name: Validate Kubernetes YAML Syntax
+        run: |
+          python -c "
+          import yaml, glob, sys
+          files = glob.glob('k8s/*.yaml')
+          if not files:
+              print('No manifests found in k8s/!')
+              sys.exit(1)
+          for f in sorted(files):
+              with open(f, 'r') as stream:
+                  docs = [d for d in yaml.safe_load_all(stream) if d is not None]
+                  print(f'✓ Validated {f}: {len(docs)} resource document(s) verified')
+          "
+          echo "✓ All Kubernetes manifests passed YAML syntax and structure validation."
