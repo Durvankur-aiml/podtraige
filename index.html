@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PodTriage 🩺☸️ - Kubernetes SRE Incident Dashboard</title>
+  <style>
+    /* ==========================================================================
+       PodTriage SRE Incident Dashboard - Editorial Beige & Soft Off-White Theme
+       ========================================================================== */
+    :root {
+      --bg-page: #F7F5F0;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #F0EDE6;
+      --bg-nav: #EFECE6;
+      --bg-card-hover: #FCFBF9;
+      
+      --border-main: #E6E2D8;
+      --border-subtle: #EAE6DC;
+      --border-focus: #1C1B1A;
+
+      --text-main: #1C1B1A;
+      --text-muted: #6B6762;
+      --text-subtle: #8A857D;
+      
+      --color-green: #2E6F40;
+      --bg-green: #EAF3EC;
+      --border-green: #CDE3D2;
+
+      --color-amber: #B47818;
+      --bg-amber: #FEF7EC;
+      --border-amber: #F7E3C0;
+
+      --color-red: #C53030;
+      --bg-red: #FDE8E8;
+      --border-red: #F8C6C6;
+
+      --btn-bg: #1C1B1A;
+      --btn-text: #FAF9F6;
+      --btn-hover: #32302D;
+
+      --term-bg: #1C1B1A;
+      --term-header: #2B2927;
+      --term-text: #EFECE6;
+      --term-green: #68BA7F;
+      --term-amber: #E2AC55;
+      --term-red: #E57373;
+      --term-blue: #7EB6E8;
+      --term-dim: #8A857D;
+
+      --shadow-sm: 0 1px 3px rgba(28, 27, 26, 0.05);
+      --shadow-md: 0 4px 16px rgba(28, 27, 26, 0.06);
+      --shadow-lg: 0 12px 32px rgba(28, 27, 26, 0.10);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "SF Pro Text", sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-main);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .brand-version {
+      font-family: "SF Mono", Consolas, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+    }
+
+    .cluster-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--color-green);
+      box-shadow: 0 0 0 0 rgba(46, 111, 64, 0.4);
+      animation: pulseGreen 2s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(46, 111, 64, 0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(46, 111, 64, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(46, 111, 64, 0); }
+    }
+
+    .btn-scan {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-scan:hover {
+      background-color: var(--btn-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-scan:active {
+      transform: translateY(0);
+    }
+
+    .spin {
+      animation: spin 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px 64px 24px;
+      flex: 1;
+    }
+
+    /* Page Header Info */
+    .page-header {
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .page-title p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .timestamp-badge {
+      font-size: 12px;
+      font-family: "SF Mono", Consolas, monospace;
+      color: var(--text-subtle);
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-main);
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+    }
+
+    /* Metric Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #DCD7CB;
+      transform: translateY(-2px);
+    }
+
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .metric-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .metric-icon {
+      font-size: 16px;
+      color: var(--text-subtle);
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-subtle);
+    }
+
+    .text-red { color: var(--color-red) !important; }
+    .text-green { color: var(--color-green) !important; }
+    .text-amber { color: var(--color-amber) !important; }
+
+    /* Filter & Controls Panel */
+    .control-panel {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .control-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-box input {
+      width: 100%;
+      background-color: var(--bg-page);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 8px 14px 8px 34px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--border-focus);
+      background-color: #FFFFFF;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      color: var(--text-subtle);
+      pointer-events: none;
+    }
+
+    .select-dropdown {
+      background-color: var(--bg-page);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .select-dropdown:focus {
+      border-color: var(--border-focus);
+      background-color: #FFFFFF;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      background-color: transparent;
+      border: 1px solid transparent;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-main);
+      background-color: var(--bg-subtle);
+    }
+
+    .filter-btn.active {
+      background-color: var(--text-main);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    /* Diagnostics Table */
+    .table-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 28px;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    thead {
+      background-color: var(--bg-nav);
+      border-bottom: 1px solid var(--border-main);
+    }
+
+    th {
+      padding: 12px 18px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.15s ease;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    td {
+      padding: 14px 18px;
+      vertical-align: middle;
+    }
+
+    .ns-tag {
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 600;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    .pod-name {
+      font-weight: 600;
+      color: var(--text-main);
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 12px;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-healthy {
+      background-color: var(--bg-green);
+      color: var(--color-green);
+      border: 1px solid var(--border-green);
+    }
+
+    .badge-critical {
+      background-color: var(--bg-red);
+      color: var(--color-red);
+      border: 1px solid var(--border-red);
+    }
+
+    .badge-warning {
+      background-color: var(--bg-amber);
+      color: var(--color-amber);
+      border: 1px solid var(--border-amber);
+    }
+
+    .restarts-badge {
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+      min-width: 24px;
+    }
+
+    .root-cause-cell {
+      max-width: 440px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .btn-inspect {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-inspect:hover {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border-color: var(--btn-bg);
+    }
+
+    /* Collapsible Terminal Drawer */
+    .terminal-card {
+      background-color: var(--term-bg);
+      border-radius: var(--radius-lg);
+      border: 1px solid #322F2C;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .terminal-header {
+      background-color: var(--term-header);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #363330;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .term-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .term-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-red { background-color: #E57373; }
+    .dot-yellow { background-color: #E2AC55; }
+    .dot-green { background-color: #68BA7F; }
+
+    .term-title {
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: #D2CDC4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .term-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .term-btn {
+      background: none;
+      border: none;
+      color: #9C968C;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .term-btn:hover {
+      color: #EFECE6;
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .terminal-body {
+      padding: 16px 20px;
+      font-family: "SF Mono", Consolas, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--term-text);
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-body.collapsed {
+      display: none;
+    }
+
+    .log-info { color: var(--term-blue); }
+    .log-warn { color: var(--term-amber); }
+    .log-crit { color: var(--term-red); font-weight: 700; }
+    .log-succ { color: var(--term-green); }
+    .log-dim  { color: var(--term-dim); }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 8px;
+      height: 13px;
+      background-color: var(--term-green);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Modal Dialog / Drawer */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(28, 27, 26, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(20px);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-nav);
+    }
+
+    .modal-title h2 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      line-height: 1;
+    }
+
+    .btn-close:hover {
+      color: var(--text-main);
+      background-color: var(--bg-subtle);
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      font-size: 13.5px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .meta-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-subtle);
+    }
+
+    .meta-val {
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--text-main);
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .sre-box {
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 20px;
+      background-color: #FFFFFF;
+    }
+
+    .sre-box h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sre-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .remediation-box {
+      background-color: var(--bg-amber);
+      border: 1px solid var(--border-amber);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .remediation-box.healthy {
+      background-color: var(--bg-green);
+      border-color: var(--border-green);
+    }
+
+    .remediation-box h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .remediation-box p {
+      font-size: 13px;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .command-snippet {
+      position: relative;
+      background-color: var(--term-bg);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .command-code {
+      font-family: "SF Mono", Consolas, monospace;
+      font-size: 12px;
+      color: var(--term-green);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .btn-copy {
+      background-color: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      border: none;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-copy:hover {
+      background-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border-main);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      background-color: var(--bg-nav);
+      gap: 10px;
+    }
+
+    /* Footer */
+    footer {
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-main);
+      padding: 24px 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--text-main);
+      text-decoration: underline;
+      font-weight: 500;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--text-main);
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 200;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="top-nav">
+    <div class="brand-group">
+      <a href="#" class="brand-logo">
+        <span>🩺</span>
+        <span>PodTriage</span>
+      </a>
+      <span class="brand-version">v1.0.0</span>
+      <div class="cluster-pill">
+        <span class="pulse-dot"></span>
+        <span>Simulated Cluster: <strong>us-east-prod-k8s</strong></span>
+      </div>
+    </div>
+    <div>
+      <button class="btn-scan" id="triggerScanBtn" onclick="runClusterScan()">
+        <span id="scanIcon">⚡</span>
+        <span id="scanText">Trigger Cluster Scan</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Page Title & Timestamp -->
+    <div class="page-header">
+      <div class="page-title">
+        <h1>Kubernetes Pod Incident & Triage Dashboard</h1>
+        <p>Continuous automated health classification, Linux exit-code introspection, and actionable SRE remediation.</p>
+      </div>
+      <div class="timestamp-badge" id="liveTimestamp">
+        Last Scanned: Just now
+      </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Total Monitored Pods</span>
+          <span class="metric-icon">☸️</span>
+        </div>
+        <div class="metric-value" id="metricTotal">5</div>
+        <div class="metric-sub">Across 3 active namespaces</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Degraded / Critical Incidents</span>
+          <span class="metric-icon text-red">⚡</span>
+        </div>
+        <div class="metric-value text-red" id="metricDegraded">3</div>
+        <div class="metric-sub">Immediate intervention required</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Healthy Workloads</span>
+          <span class="metric-icon text-green">✓</span>
+        </div>
+        <div class="metric-value text-green" id="metricHealthy">2</div>
+        <div class="metric-sub">Passing readiness probes (100% SLA)</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">MTTD (Mean Time to Detect)</span>
+          <span class="metric-icon">⏱️</span>
+        </div>
+        <div class="metric-value" id="metricMttd">138ms</div>
+        <div class="metric-sub">Automated deterministic rule engine</div>
+      </div>
+    </section>
+
+    <!-- Filters & Search Controls -->
+    <section class="control-panel">
+      <div class="control-left">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by pod name, namespace, or failure state..." oninput="filterPods()">
+        </div>
+        <select class="select-dropdown" id="namespaceSelect" onchange="filterPods()">
+          <option value="all">All Namespaces (-A)</option>
+          <option value="production">production</option>
+          <option value="monitoring">monitoring</option>
+          <option value="default">default</option>
+        </select>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-btn active" data-filter="all" onclick="setSeverityFilter('all', this)">All (5)</button>
+        <button class="filter-btn" data-filter="degraded" onclick="setSeverityFilter('degraded', this)">Degraded Only (3)</button>
+        <button class="filter-btn" data-filter="healthy" onclick="setSeverityFilter('healthy', this)">Healthy Only (2)</button>
+      </div>
+    </section>
+
+    <!-- Interactive Pod Diagnostics Table -->
+    <section class="table-card">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Namespace</th>
+              <th>Pod Identifier</th>
+              <th>Health Condition</th>
+              <th style="text-align: center;">Restarts</th>
+              <th>Root-Cause Analysis</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="podTableBody">
+            <!-- Dynamically Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Collapsible Live Terminal Drawer -->
+    <section class="terminal-card">
+      <div class="terminal-header" onclick="toggleTerminal()">
+        <div class="term-controls">
+          <span class="term-dot dot-red"></span>
+          <span class="term-dot dot-yellow"></span>
+          <span class="term-dot dot-green"></span>
+        </div>
+        <div class="term-title">
+          <span>📟</span>
+          <span>podtriage-scanner.log — SRE Terminal stdout stream</span>
+        </div>
+        <div class="term-actions">
+          <button class="term-btn" onclick="event.stopPropagation(); clearTerminal();">Clear</button>
+          <button class="term-btn" id="termToggleBtn">Collapse ▾</button>
+        </div>
+      </div>
+      <div class="terminal-body" id="terminalOutput">
+<span class="log-dim">[2026-10-31 05:02:11 UTC]</span> <span class="log-info">INFO</span>  podtriage v1.0.0 daemon initialized.
+<span class="log-dim">[2026-10-31 05:02:11 UTC]</span> <span class="log-info">INFO</span>  Target cluster context: <span class="log-succ">us-east-prod-k8s</span> (All Namespaces)
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-warn">WARN</span>  Live cluster API unreachable. Gracefully switching to high-fidelity simulated production triage mode.
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-crit">ALERT</span> Pod production/auth-service-7d8b-px1 failed: CrashLoopBackOff (Exit 137 - OOMKilled). Restarts: 14.
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-crit">ALERT</span> Pod production/payment-worker-91a-zz0 failed: ImagePullBackOff (ErrImagePull - Token Expired).
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-crit">ALERT</span> Pod default/auth-service-oom-684f-8bz failed: CrashLoopBackOff (Exit 137 - OOMKilled). Restarts: 9.
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-succ">OK</span>    Pod default/redis-cache-master-0 Running (Healthy). Restarts: 0.
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-succ">OK</span>    Pod monitoring/prometheus-node-exporter-k8s-4f9 Running (Healthy). Restarts: 0.
+<span class="log-dim">[2026-10-31 05:02:12 UTC]</span> <span class="log-info">INFO</span>  Scan complete. Surveyed 5 pods. 3 Degraded, 2 Healthy. MTTD: 138ms.<span class="cursor-blink"></span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Diagnostic Inspection Modal / Drawer -->
+  <div class="modal-overlay" id="inspectModal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔬</span>
+          <h2 id="modalPodTitle">Pod Diagnostics Inspection</h2>
+        </div>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Meta Details -->
+        <div class="meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Namespace</span>
+            <span class="meta-val" id="modalNamespace">production</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Health Status</span>
+            <span class="meta-val" id="modalHealthStatus">CrashLoopBackOff</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Container Image</span>
+            <span class="meta-val" id="modalImage">registry.internal.corp/production/auth-service:v2.1.4</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Resource Quotas</span>
+            <span class="meta-val" id="modalResources">CPU: 500m | RAM: 512Mi (Ceiling Breached)</span>
+          </div>
+        </div>
+
+        <!-- SRE Root Cause Deep Dive -->
+        <div class="sre-box">
+          <h3><span>⚠️</span> Root-Cause Investigation</h3>
+          <p id="modalRootCause">Loading root cause analysis...</p>
+        </div>
+
+        <!-- Actionable Remediation Box -->
+        <div class="remediation-box" id="modalRemediationBox">
+          <h3>Prescriptive SRE Remediation</h3>
+          <p id="modalRecommendation">Loading recommended remediation actions...</p>
+          
+          <div class="command-snippet" id="modalCmdSnippet">
+            <span class="command-code" id="modalCommandText">kubectl get pods</span>
+            <button class="btn-copy" onclick="copyModalCommand()">
+              <span id="copyBtnText">Copy Command</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn-inspect" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toastNotification">
+    <span id="toastIcon">✓</span>
+    <span id="toastMessage">Command copied to clipboard</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      <strong>PodTriage</strong> — SRE & Incident-Response CLI for Kubernetes Pod Diagnostics. 
+      Created for DevOps & Kubernetes (ISE-2) by <a href="https://github.com/Durvankur-aiml/podtraige" target="_blank">Paras Sarnobat</a>.
+    </p>
+  </footer>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script>
+    // Cluster Pod Diagnostics Dataset
+    const POD_DATASET = [
+      {
+        id: "auth-service-7d8b-px1",
+        namespace: "production",
+        state: "CrashLoopBackOff (Exit 137 - OOMKilled)",
+        stateBadge: "badge-critical",
+        severity: "degraded",
+        restarts: 14,
+        rootCause: "Cgroup memory allocation exceeded (512Mi limit breached). Linux kernel invoked OOM Killer (SIGKILL / 137).",
+        image: "registry.internal.corp/production/auth-service:v2.1.4",
+        container: "auth-service",
+        resources: "CPU: 500m | RAM Limit: 512Mi | Usage: 524Mi (Violation)",
+        recommendation: "Increase container memory ceiling from 512Mi to 1024Mi in Deployment manifest and inspect memory leak via pprof.",
+        command: "kubectl set resources deployment auth-service -n production --limits=memory=1024Mi,cpu=1000m"
+      },
+      {
+        id: "payment-worker-91a-zz0",
+        namespace: "production",
+        state: "ImagePullBackOff (Token Expired)",
+        stateBadge: "badge-critical",
+        severity: "degraded",
+        restarts: 0,
+        rootCause: "Registry authentication failure: access token expired (HTTP 401 Unauthorized from internal Docker registry).",
+        image: "registry.internal.corp/fintech/payment-worker:v3.8.0",
+        container: "worker",
+        resources: "CPU: 250m | RAM Limit: 256Mi | Usage: 0Mi (Not Started)",
+        recommendation: "Rotate Docker registry secret 'docker-registry' in namespace production with refreshed credentials.",
+        command: "kubectl create secret docker-registry regcred --docker-server=registry.internal.corp --docker-username=svc-deployer --docker-password=$AUTH_TOKEN --dry-run=client -o yaml | kubectl apply -n production -f -"
+      },
+      {
+        id: "auth-service-oom-684f-8bz",
+        namespace: "default",
+        state: "CrashLoopBackOff (Exit 137 - OOMKilled)",
+        stateBadge: "badge-critical",
+        severity: "degraded",
+        restarts: 9,
+        rootCause: "Test suite OOM reproduction: workload allocated 32Mi under a strict 16Mi cgroup ceiling.",
+        image: "python:3.11-alpine",
+        container: "auth-service",
+        resources: "CPU: 100m | RAM Limit: 16Mi | Usage: 32Mi (200% Ceiling)",
+        recommendation: "Test scenario verified. Increase limit to 64Mi or delete the test workload once verified.",
+        command: "kubectl delete deployment auth-service-oom -n default"
+      },
+      {
+        id: "redis-cache-master-0",
+        namespace: "default",
+        state: "Running (Healthy)",
+        stateBadge: "badge-healthy",
+        severity: "healthy",
+        restarts: 0,
+        rootCause: "Nominal operation. Liveness and readiness health probes passing. In-memory keyspace healthy.",
+        image: "redis:7.2-alpine",
+        container: "redis",
+        resources: "CPU: 200m | RAM Limit: 512Mi | Usage: 84Mi (16.4%)",
+        recommendation: "System operating in steady state. Maintain continuous telemetry tracking and memory monitoring.",
+        command: "kubectl top pod redis-cache-master-0 -n default"
+      },
+      {
+        id: "prometheus-node-exporter-k8s-4f9",
+        namespace: "monitoring",
+        state: "Running (Healthy)",
+        stateBadge: "badge-healthy",
+        severity: "healthy",
+        restarts: 0,
+        rootCause: "Nominal telemetry collection. DaemonSet actively scraping worker node metrics without dropouts.",
+        image: "prom/node-exporter:v1.7.0",
+        container: "node-exporter",
+        resources: "CPU: 100m | RAM Limit: 128Mi | Usage: 28Mi (21.8%)",
+        recommendation: "DaemonSet operational across all cluster worker nodes. No remediation required.",
+        command: "kubectl logs prometheus-node-exporter-k8s-4f9 -n monitoring --tail=50"
+      }
+    ];
+
+    let currentSeverityFilter = "all";
+
+    // Render Table Rows
+    function renderTable(pods) {
+      const tbody = document.getElementById("podTableBody");
+      tbody.innerHTML = "";
+
+      if (pods.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-subtle);">
+              🔍 No matching pods found in selected namespace or search criteria.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      pods.forEach(pod => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><span class="ns-tag">${pod.namespace}</span></td>
+          <td><span class="pod-name">${pod.id}</span></td>
+          <td>
+            <span class="status-badge ${pod.stateBadge}">
+              <span>${pod.severity === 'healthy' ? '●' : '▲'}</span>
+              <span>${pod.state}</span>
+            </span>
+          </td>
+          <td style="text-align: center;">
+            <span class="restarts-badge ${pod.restarts > 5 ? 'text-red' : ''}">${pod.restarts}</span>
+          </td>
+          <td><div class="root-cause-cell">${pod.rootCause}</div></td>
+          <td style="text-align: right;">
+            <button class="btn-inspect" onclick="openInspectModal('${pod.id}')">Inspect</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Filter Logic
+    function filterPods() {
+      const search = document.getElementById("searchInput").value.toLowerCase().trim();
+      const namespace = document.getElementById("namespaceSelect").value;
+
+      const filtered = POD_DATASET.filter(pod => {
+        const matchesSearch = 
+          pod.id.toLowerCase().includes(search) || 
+          pod.namespace.toLowerCase().includes(search) || 
+          pod.state.toLowerCase().includes(search) ||
+          pod.rootCause.toLowerCase().includes(search);
+
+        const matchesNamespace = (namespace === "all" || pod.namespace === namespace);
+        const matchesSeverity = (currentSeverityFilter === "all" || pod.severity === currentSeverityFilter);
+
+        return matchesSearch && matchesNamespace && matchesSeverity;
+      });
+
+      renderTable(filtered);
+    }
+
+    function setSeverityFilter(severity, btn) {
+      currentSeverityFilter = severity;
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      filterPods();
+    }
+
+    // Modal Inspection Drawer
+    let activePod = null;
+
+    function openInspectModal(podId) {
+      const pod = POD_DATASET.find(p => p.id === podId);
+      if (!pod) return;
+      activePod = pod;
+
+      document.getElementById("modalPodTitle").textContent = pod.id;
+      document.getElementById("modalNamespace").textContent = pod.namespace;
+      document.getElementById("modalHealthStatus").textContent = pod.state;
+      document.getElementById("modalImage").textContent = pod.image;
+      document.getElementById("modalResources").textContent = pod.resources;
+      document.getElementById("modalRootCause").textContent = pod.rootCause;
+      document.getElementById("modalRecommendation").textContent = pod.recommendation;
+      document.getElementById("modalCommandText").textContent = pod.command;
+
+      const remBox = document.getElementById("modalRemediationBox");
+      if (pod.severity === "healthy") {
+        remBox.className = "remediation-box healthy";
+      } else {
+        remBox.className = "remediation-box";
+      }
+
+      document.getElementById("copyBtnText").textContent = "Copy Command";
+      document.getElementById("inspectModal").classList.add("active");
+    }
+
+    function closeModal() {
+      document.getElementById("inspectModal").classList.remove("active");
+      activePod = null;
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === "inspectModal") {
+        closeModal();
+      }
+    }
+
+    // Copy Command to Clipboard
+    function copyModalCommand() {
+      if (!activePod) return;
+      navigator.clipboard.writeText(activePod.command).then(() => {
+        document.getElementById("copyBtnText").textContent = "✓ Copied!";
+        showToast("✓ Copied kubectl command to clipboard");
+        setTimeout(() => {
+          document.getElementById("copyBtnText").textContent = "Copy Command";
+        }, 2000);
+      });
+    }
+
+    // Toast Alert
+    function showToast(msg) {
+      const toast = document.getElementById("toastNotification");
+      document.getElementById("toastMessage").textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    // Terminal Drawer Controls
+    function toggleTerminal() {
+      const body = document.getElementById("terminalOutput");
+      const btn = document.getElementById("termToggleBtn");
+      body.classList.toggle("collapsed");
+      btn.textContent = body.classList.contains("collapsed") ? "Expand ▴" : "Collapse ▾";
+    }
+
+    function clearTerminal() {
+      document.getElementById("terminalOutput").innerHTML = `<span class="log-dim">[Terminal cleared]</span><span class="cursor-blink"></span>`;
+    }
+
+    // Trigger Cluster Scan
+    function runClusterScan() {
+      const btn = document.getElementById("triggerScanBtn");
+      const icon = document.getElementById("scanIcon");
+      const text = document.getElementById("scanText");
+
+      icon.classList.add("spin");
+      text.textContent = "Scanning Cluster...";
+      btn.disabled = true;
+
+      setTimeout(() => {
+        icon.classList.remove("spin");
+        text.textContent = "Trigger Cluster Scan";
+        btn.disabled = false;
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById("liveTimestamp").textContent = `Last Scanned: Today at ${timeStr}`;
+
+        // Append new scan log line to terminal
+        const term = document.getElementById("terminalOutput");
+        const cursor = term.querySelector(".cursor-blink");
+        if (cursor) cursor.remove();
+
+        const utcStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+        term.innerHTML += `
+<span class="log-dim">[${utcStr}]</span> <span class="log-info">RE-SCAN</span> Initiated manual scan. 5 pods surveyed. 3 Critical, 2 Healthy. MTTD: 124ms.<span class="cursor-blink"></span>`;
+        term.scrollTop = term.scrollHeight;
+
+        showToast("✓ Cluster triage scan completed in 124ms");
+      }, 700);
+    }
+
+    // Keyboard Shortcuts (ESC closes modal)
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    // Initialize Table on Page Load
+    document.addEventListener("DOMContentLoaded", () => {
+      renderTable(POD_DATASET);
+    });
+  </script>
+</body>
+</html>
