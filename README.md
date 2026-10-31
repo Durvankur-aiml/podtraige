@@ -44,7 +44,6 @@
 - [Git Workflow and Commit History Showcase](#git-workflow-and-commit-history-showcase)
 - [Implementation Proof Gallery](#implementation-proof-gallery)
 - [Installation and Operational Guide](#installation-and-operational-guide)
-- [Academic Evaluation and Submission Summary](#academic-evaluation-and-submission-summary)
 - [License](#license)
 
 ---
@@ -293,25 +292,6 @@ python -m http.server 8000
 # Open your browser and navigate to:
 # http://localhost:8000
 ```
-
----
-
-## Academic Evaluation and Submission Summary
-
-| Evaluation Parameter | Specification | Verification Status |
-| :--- | :--- | :--- |
-| **Project Title** | PodTriage - Kubernetes Incident-Response & Pod Diagnostic Engine | Complete |
-| **Course & Assessment** | DevOps and Kubernetes (ISE-2) | Complete |
-| **Student Name** | Prachi Patil | Verified |
-| **Roll Number** | A58 | Verified |
-| **Branch / Department** | Artificial Intelligence and Data Science / AIML | Verified |
-| **Institute** | D. Y. Patil College of Engineering and Technology | Verified |
-| **Primary Repository** | https://github.com/Durvankur-aiml/podtraige | Verified |
-| **Docker Integration** | Multi-stage / Alpine Dockerfile, `.dockerignore`, container verification | Passed |
-| **Kubernetes Integration** | Least-privilege RBAC (`rbac.yaml`), CronJob scanner (`cronjob.yaml`), failure workloads | Passed |
-| **CI/CD Pipeline** | GitHub Actions 3-stage validation pipeline (`ci.yml`) | Passed |
-| **Web Dashboard** | Standalone SRE incident dashboard (`index.html`) | Passed |
-| **Visual Proof Gallery** | 7 comprehensive visual proof screenshots in `screenshots/` | Complete |
 
 ---
 
