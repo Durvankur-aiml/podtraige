@@ -69,38 +69,39 @@ Investigating these degraded workloads manually across multi-tenant clusters pre
 
 ## System Architecture and Diagnostic Triage Flow
 
-```
-+-----------------------------------------------------------------------------------------+
-|                              KUBERNETES CLUSTER ENVIRONMENT                             |
-+-----------------------------------------------------------------------------------------+
-       |                                                                   |
-       | Live API Discovery                                                | Scheduled Triage
-       | (kubectl get pods -A -o json)                                     | (k8s/cronjob.yaml)
-       v                                                                   v
-+------------------+         Fallback (Offline/Auth Denied)        +----------------------+
-|  PodTriage CLI   | <============================================ | High-Fidelity Mock   |
-| Diagnostic Engine|                                               | Production Benchmark |
-+------------------+                                               +----------------------+
-       |
-       +---> [1] Workload Extraction: Phase, status conditions, container restart metrics
-       |
-       +---> [2] Signal Introspection: Exit 137 (OOMKilled) | Exit 1 (Crash) | Exit 143 (SIGTERM)
-       |
-       +---> [3] Pattern Classification: CrashLoopBackOff, ImagePullBackOff, Pending, Evicted
-       |
-       v
-+-----------------------------------------------------------------------------------------+
-|                               MULTI-INTERFACE SRE DELIVERY                              |
-+-----------------------------------------------------------------------------------------+
-|  TERMINAL / CI INTERFACE:                                                               |
-|  - ASCII Diagnostic Table with Namespace, Pod, State, Restarts, Root Cause & Fix        |
-|  - Structured JSON Output (--json) for SIEM / Alertmanager Webhooks                     |
-|                                                                                         |
-|  WEB DASHBOARD INTERFACE (index.html):                                                  |
-|  - Real-Time Telemetry Cards: Total Workloads, Degraded Count, Healthy Count, MTTD      |
-|  - Interactive Filter Bar: Namespace filtering, state filtering, and text search        |
-|  - Diagnostic Inspection Drawer: Deep-dive root-cause logs and one-click copy fixes     |
-+-----------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph K8S["Kubernetes Cluster Environment"]
+        direction LR
+        A["Live Discovery<br/>(kubectl get pods -A -o json)"]
+        B["Scheduled Scanning<br/>(k8s/cronjob.yaml)"]
+    end
+
+    subgraph ENGINE["PodTriage Diagnostic Engine"]
+        direction TB
+        C{"Live API Reachable?"}
+        D["Production Benchmark Telemetry"]
+        E["Signal Introspection<br/>(Exit 137 OOM / Exit 1 Crash / SIGTERM)"]
+        F["Root Cause Classification<br/>(CrashLoopBackOff / OOMKilled / Evicted)"]
+    end
+
+    subgraph INTERFACES["Multi-Interface SRE Delivery"]
+        direction LR
+        G["Terminal CLI & JSON Telemetry"]
+        H["Web SRE Incident Dashboard (index.html)"]
+    end
+
+    A --> C
+    B --> C
+    C -- Yes --> E
+    C -- Offline / Fallback --> D --> E
+    E --> F
+    F --> G
+    F --> H
+
+    style K8S fill:#2d3748,stroke:#cbd5e0,stroke-width:1px,color:#fff
+    style ENGINE fill:#1a202c,stroke:#4a5568,stroke-width:1px,color:#fff
+    style INTERFACES fill:#2d3748,stroke:#cbd5e0,stroke-width:1px,color:#fff
 ```
 
 ---
@@ -172,7 +173,8 @@ The project was constructed following disciplined, single-responsibility Git ver
 | **#5** | `72a2616` | **Academic Polish** | `docs: update author and submission details to Prachi Patil` | Updated project submission details, author credentials, and academic evaluation metadata. |
 | **#6** | `f5f8f38` | **Styling Polish** | `docs: restyle readme to match devpulse layout and add visual git commits showcase` | Restyled documentation structure, refined badge aesthetics, and generated visual commit history assets. |
 | **#7** | `d7edc69` | **Web Dashboard** | `feat(web): add single-page beige and off-white sre incident dashboard` | Implemented standalone SRE incident web dashboard (`index.html`) with telemetry metrics, filters, and inspection drawer. |
-| **#8** | *Current* | **Final Overhaul** | `docs: complete formal documentation overhaul, student info block, and full visual proof gallery` | Formalized documentation, updated academic info block, and incorporated complete 7-figure visual proof gallery. |
+| **#8** | `9887c56` | **Final Overhaul** | `docs: complete formal documentation overhaul, student info block, and full visual proof gallery` | Formalized documentation, updated academic info block, and incorporated complete 7-figure visual proof gallery. |
+| **#9** | `abefbdd` | **Screenshots Refresh** | `chore(screenshots): refresh git commit milestone history proof` | Synchronized visual commit history image with all 9 project milestones. |
 
 ---
 
