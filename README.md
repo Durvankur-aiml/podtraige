@@ -1,192 +1,238 @@
 <div align="center">
 
-# PodTriage 🩺☸️
-### Automated SRE Incident-Response & Pod Diagnostic Engine for Kubernetes
+# PodTriage: Kubernetes Incident-Response and Pod Diagnostic Engine
+### Automated Cluster Health Inspection, Root-Cause Analysis, and SRE Remediation
 
 [![GitHub Actions CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/Durvankur-aiml/podtraige/actions/workflows/ci.yml)
 [![Docker Alpine](https://img.shields.io/badge/Docker-3.11--alpine-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![Kubernetes RBAC](https://img.shields.io/badge/Kubernetes-RBAC%20%26%20CronJob-326CE5?logo=kubernetes&logoColor=white)](k8s/)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](podtriage.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Maintained](https://img.shields.io/badge/Status-Maintained%20%26%20Verified-brightgreen)](#-git-workflow--commit-history-showcase)
+[![Status](https://img.shields.io/badge/Status-Maintained%20%26%20Verified-brightgreen)](#git-workflow-and-commit-history-showcase)
 
 <p align="center">
-  <strong>A lightweight, production-grade SRE diagnostic CLI engineered to detect, classify, and remediate degraded Kubernetes workloads across all cluster namespaces in real time.</strong>
+  <strong>A lightweight, production-grade SRE diagnostic engine engineered to detect, classify, and remediate degraded Kubernetes workloads across all cluster namespaces in real time.</strong>
 </p>
 
 </div>
 
 ---
 
-## 📋 Table of Contents
-- [🎯 Project Overview & Problem Statement](#-project-overview--problem-statement)
-- [🏗️ System Architecture & Incident Triage Flow](#️-system-architecture--incident-triage-flow)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [⚙️ DevOps & Kubernetes Tool Integrations](#️-devops--kubernetes-tool-integrations)
-  - [1. Docker (Containerization & Runtime Hardening)](#1-docker-containerization--runtime-hardening)
-  - [2. Kubernetes (RBAC, Scheduled CronJob & Resource Quotas)](#2-kubernetes-rbac-scheduled-cronjob--resource-quotas)
-  - [3. GitHub Actions (Automated CI/CD Validation Pipeline)](#3-github-actions-automated-cicd-validation-pipeline)
-- [🔄 Git Workflow & Commit History Showcase](#-git-workflow--commit-history-showcase)
-- [📸 Implementation Proof Gallery](#-implementation-proof-gallery)
-- [🚀 Quick Start & Local Setup Guide](#-quick-start--local-setup-guide)
-- [📋 Academic & Evaluation Metadata](#-academic--evaluation-metadata)
-- [📄 License](#-license)
+## Student and Academic Information
+
+| Field | Details |
+| :--- | :--- |
+| Student Name | Prachi Patil |
+| Roll Number | A58 |
+| Department / Branch | Artificial Intelligence and Data Science / AIML |
+| Institute | D. Y. Patil College of Engineering and Technology |
+| Course | DevOps and Kubernetes (ISE-2) |
+| Repository | https://github.com/Durvankur-aiml/podtraige |
 
 ---
 
-## 🎯 Project Overview & Problem Statement
+## Table of Contents
 
-In microservice architectures deployed on Kubernetes, workloads frequently degrade due to memory ceiling breaches (kernel `OOMKilled`), expired container registry access tokens, unhandled startup panics, or scheduling constraints. 
-
-Investigating these failures manually across multi-tenant clusters requires running disjointed commands (`kubectl get pods`, `kubectl describe`, `kubectl logs --previous`), extracting container exit codes, and cross-referencing node pressure events. This manual toil drastically increases **Mean Time to Resolution (MTTR)** during Sev-1/Sev-2 incidents.
-
-**PodTriage** solves this by providing:
-- **Instant Cluster-Wide Diagnostic Inspection**: Scans all namespaces simultaneously (`kubectl get pods -A -o json`) and analyzes container termination states in milliseconds.
-- **Root-Cause Analysis Rule Engine**: Dissects Linux exit codes (e.g., `137` OOMKilled via cgroup memory ceiling, `1` unhandled exceptions, `143` SIGTERM) and registry failure strings (`ErrImagePull`, authentication token expiry).
-- **Prescriptive SRE Remediation**: Pairs every degraded workload with concrete, immediate operational commands (e.g., manifest memory adjustments, secret rotation, node pressure drain commands).
-- **Zero-Dependency High-Fidelity Fallback**: Automatically activates a simulated production incident dataset across `production`, `monitoring`, and `default` namespaces whenever the cluster API daemon is unreachable or unauthenticated.
+- [Executive Summary and Problem Statement](#executive-summary-and-problem-statement)
+- [System Architecture and Diagnostic Triage Flow](#system-architecture-and-diagnostic-triage-flow)
+- [Technology Stack](#technology-stack)
+- [DevOps and Cloud-Native Tool Integrations](#devops-and-cloud-native-tool-integrations)
+  - [1. Docker: Minimal Alpine Packaging and Runtime Hardening](#1-docker-minimal-alpine-packaging-and-runtime-hardening)
+  - [2. Kubernetes: RBAC Least-Privilege and Scheduled CronJob Scans](#2-kubernetes-rbac-least-privilege-and-scheduled-cronjob-scans)
+  - [3. GitHub Actions: Multi-Stage CI/CD Validation Pipeline](#3-github-actions-multi-stage-cicd-validation-pipeline)
+  - [4. Single-Page SRE Web Incident Dashboard](#4-single-page-sre-web-incident-dashboard)
+- [Git Workflow and Commit History Showcase](#git-workflow-and-commit-history-showcase)
+- [Implementation Proof Gallery](#implementation-proof-gallery)
+- [Installation and Operational Guide](#installation-and-operational-guide)
+- [Academic Evaluation and Submission Summary](#academic-evaluation-and-submission-summary)
+- [License](#license)
 
 ---
 
-## 🏗️ System Architecture & Incident Triage Flow
+## Executive Summary and Problem Statement
+
+In distributed microservice architectures deployed on Kubernetes clusters, workloads frequently transition into unready or crashed states due to memory ceiling breaches (Linux kernel `OOMKilled`), expired container registry pull credentials, missing configuration dependencies, or unhandled application panics.
+
+Investigating these degraded workloads manually across multi-tenant clusters presents severe operational bottlenecks:
+- Engineers must execute multiple disjointed CLI queries (`kubectl get pods`, `kubectl describe pod`, `kubectl logs --previous`).
+- Linux termination exit codes must be manually extracted and mapped to root-cause mechanisms (e.g., Exit 137 versus Exit 1).
+- Time-critical incident remediation is delayed, significantly elevating **Mean Time to Resolution (MTTR)** during Sev-1 and Sev-2 outages.
+
+**PodTriage** solves this operational challenge through an automated, multi-interface diagnostic platform:
+1. **Cluster-Wide Multi-Namespace Inspection**: Queries all namespaces simultaneously (`kubectl get pods -A -o json`) and parses container status blocks in milliseconds.
+2. **Deterministic Root-Cause Rule Engine**: Decodes Linux kernel termination signals (Exit 137 for cgroup OOM kills, Exit 1 for application crashes, Exit 143 for SIGTERM) alongside container lifecycle strings (`CrashLoopBackOff`, `ImagePullBackOff`, `Pending`, `Evicted`).
+3. **Prescriptive SRE Remediation Guidance**: Automatically couples every failing workload with explicit, actionable remediation commands (e.g., manifest resource limit adjustments, image pull secret recreation, node cordoning).
+4. **High-Fidelity Automated Fallback**: Incorporates a built-in benchmark dataset spanning `production`, `monitoring`, and `default` namespaces, ensuring continuous validation and demonstration even when the live Kubernetes API server is unreachable.
+5. **Dual Interface Accessibility**: Provides both an ASCII-formatted terminal CLI for automated scripting / CronJobs and a responsive, standalone SRE Web Incident Dashboard for real-time visualization.
+
+---
+
+## System Architecture and Diagnostic Triage Flow
 
 ```
 +-----------------------------------------------------------------------------------------+
-|                                KUBERNETES CLUSTER ENVIRONMENT                           |
+|                              KUBERNETES CLUSTER ENVIRONMENT                             |
 +-----------------------------------------------------------------------------------------+
        |                                                                   |
-       | Live API Scan                                                     | Scheduled Triage
+       | Live API Discovery                                                | Scheduled Triage
        | (kubectl get pods -A -o json)                                     | (k8s/cronjob.yaml)
        v                                                                   v
-+------------------+         Fallback (Offline/Auth Failed)        +----------------------+
++------------------+         Fallback (Offline/Auth Denied)        +----------------------+
 |  PodTriage CLI   | <============================================ | High-Fidelity Mock   |
 | Diagnostic Engine|                                               | Production Benchmark |
 +------------------+                                               +----------------------+
        |
-       +---> [1] Inspection & State Extraction (phase, reason, containerStatuses)
+       +---> [1] Workload Extraction: Phase, status conditions, container restart metrics
        |
-       +---> [2] Exit Code Introspection (Exit 137 = OOMKilled | Exit 1 = App Crash)
+       +---> [2] Signal Introspection: Exit 137 (OOMKilled) | Exit 1 (Crash) | Exit 143 (SIGTERM)
        |
-       +---> [3] Pattern Recognition (ImagePullBackOff, Evicted, Pending, CrashLoop)
+       +---> [3] Pattern Classification: CrashLoopBackOff, ImagePullBackOff, Pending, Evicted
        |
        v
 +-----------------------------------------------------------------------------------------+
-|                              SRE INCIDENT REPORT OUTPUT                                 |
+|                               MULTI-INTERFACE SRE DELIVERY                              |
 +-----------------------------------------------------------------------------------------+
-|  - NAMESPACE   : Isolated failure scope (production, monitoring, default)               |
-|  - POD NAME    : Target degraded workload identifier                                    |
-|  - HEALTH STATE: Precise classified condition with exit code annotation                 |
-|  - RESTARTS    : Container crash velocity indicator                                     |
-|  - SRE ANALYSIS: Direct kernel/kubelet root cause + actionable fix command              |
+|  TERMINAL / CI INTERFACE:                                                               |
+|  - ASCII Diagnostic Table with Namespace, Pod, State, Restarts, Root Cause & Fix        |
+|  - Structured JSON Output (--json) for SIEM / Alertmanager Webhooks                     |
+|                                                                                         |
+|  WEB DASHBOARD INTERFACE (index.html):                                                  |
+|  - Real-Time Telemetry Cards: Total Workloads, Degraded Count, Healthy Count, MTTD      |
+|  - Interactive Filter Bar: Namespace filtering, state filtering, and text search        |
+|  - Diagnostic Inspection Drawer: Deep-dive root-cause logs and one-click copy fixes     |
 +-----------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
-| Layer | Technology | Purpose |
+| Component / Layer | Technology | Operational Function |
 | :--- | :--- | :--- |
-| **Core Runtime** | Python 3.11 | High-performance diagnostic rule engine, JSON parsing & ASCII terminal table layout |
-| **Containerization** | Docker (Alpine 3.11) | Ultra-lightweight container packaging with non-root security principles |
-| **Orchestration** | Kubernetes v1.28+ | Least-privilege RBAC, automated 15-minute CronJob scanner & OOM failure simulation |
-| **CI/CD Automation** | GitHub Actions | 3-stage validation pipeline: code linting, container build test, and YAML schema audit |
-| **Version Control** | Git & GitHub | Strict sequential milestone development tracking with semantic commits |
+| **Core Runtime Engine** | Python 3.11 | High-performance JSON parser, exit-code rule engine, and CLI interface |
+| **Containerization** | Docker (Alpine 3.11) | Ultra-lightweight container image (< 55MB) optimized for zero-dependency execution |
+| **Cluster Orchestration** | Kubernetes v1.28+ | Least-privilege RBAC policies, 15-minute CronJob scanner, and failure workloads |
+| **CI/CD Pipeline** | GitHub Actions | Automated 3-stage validation: code linting, container build test, and YAML verification |
+| **Interactive Dashboard** | HTML5, CSS3, Vanilla JS | Standalone SRE Web Dashboard in warm beige / off-white editorial aesthetic |
+| **Version Control** | Git and GitHub | Strict semantic commit milestones tracking incremental feature development |
 
 ---
 
-## ⚙️ DevOps & Kubernetes Tool Integrations
+## DevOps and Cloud-Native Tool Integrations
 
-PodTriage is built around three foundational pillars of cloud-native DevOps engineering:
-
-### 1. Docker (Containerization & Runtime Hardening)
-- **Base Image**: `python:3.11-alpine` for minimum image size (~20MB compressed).
+### 1. Docker: Minimal Alpine Packaging and Runtime Hardening
+- **Base Image**: Built upon `python:3.11-alpine` to maintain an ultra-compact footprint and eliminate superfluous package bloat.
 - **Container Hardening**:
-  - Sets explicit working directory (`/app`).
-  - Pre-configures script execution permissions (`chmod +x /app/podtriage.py`).
-  - Self-contained entrypoint: `ENTRYPOINT ["python", "/app/podtriage.py"]`.
-- **Hygiene**: Uses `.dockerignore` to exclude local caches, virtual environments, and `.git` trees from production images.
+  - Designated dedicated working directory at `/app`.
+  - Configured script execution permissions explicitly (`chmod +x /app/podtriage.py`).
+  - Standardized container execution entrypoint: `ENTRYPOINT ["python", "/app/podtriage.py"]`.
+- **Build Hygiene**: Configured `.dockerignore` to exclude `.git`, `__pycache__`, local virtual environments, and documentation screenshots.
 
-### 2. Kubernetes (RBAC, Scheduled CronJob & Resource Quotas)
-- **Least-Privilege RBAC (`k8s/rbac.yaml`)**:
-  - `ServiceAccount: podtriage-sa`
-  - `ClusterRole: podtriage-reader` explicitly restricted to read-only verbs (`get`, `list`, `watch`) on `pods`, `pods/log`, `pods/status`, and `events` across core and `events.k8s.io` API groups.
-  - `ClusterRoleBinding: podtriage-reader-binding` binds the read-only role directly to the service account.
-- **Continuous Scanner CronJob (`k8s/cronjob.yaml`)**:
-  - Automated execution every 15 minutes (`schedule: "*/15 * * * *"`).
-  - Hardened container spec with `runAsNonRoot: true`, `readOnlyRootFilesystem: true`, and `restartPolicy: OnFailure`.
-  - Enforces explicit resource quotas (`requests: cpu 50m, memory 64Mi` | `limits: cpu 100m, memory 128Mi`).
-- **Failure Simulation Workload (`k8s/test-workloads.yaml`)**:
-  - Deploys `auth-service-oom` with a strict `16Mi` memory limit to trigger intentional Linux cgroup OOM kills (Exit 137) for validating automated scanner accuracy.
+### 2. Kubernetes: RBAC Least-Privilege and Scheduled CronJob Scans
+- **Least-Privilege Security Model (`k8s/rbac.yaml`)**:
+  - `ServiceAccount`: `podtriage-sa` in the `default` namespace.
+  - `ClusterRole`: `podtriage-reader` explicitly restricted to read-only API verbs (`get`, `list`, `watch`) on `pods`, `pods/log`, `pods/status`, and `events`.
+  - `ClusterRoleBinding`: Binds `podtriage-reader` strictly to `podtriage-sa`, completely preventing cluster privilege escalation.
+- **Automated CronJob Scanner (`k8s/cronjob.yaml`)**:
+  - Triggers diagnostic triage automatically every 15 minutes (`schedule: "*/15 * * * *"`).
+  - Hardened workload configuration enforcing `runAsNonRoot: true`, `readOnlyRootFilesystem: true`, and `restartPolicy: OnFailure`.
+  - Dedicated resource constraints: Requests (`cpu: 50m`, `memory: 64Mi`) and Limits (`cpu: 100m`, `memory: 128Mi`).
+- **OOM Failure Reproduction Workload (`k8s/test-workloads.yaml`)**:
+  - Deploys `auth-service-oom` constrained to a restrictive `16Mi` memory limit to trigger intentional Linux kernel cgroup OOM kills (Exit 137), confirming scanner accuracy under real fault conditions.
 
-### 3. GitHub Actions (Automated CI/CD Validation Pipeline)
-- **Workflow File**: `.github/workflows/ci.yml`
-- **Triggers**: Every `push` and `pull_request` targeting `main`.
-- **Pipeline Architecture**:
-  1. **Job 1: `lint-and-validate`**: Verifies Python bytecode syntax via `py_compile`, runs CLI simulation mode (`--simulate`), and checks structured JSON schema output (`--json`).
-  2. **Job 2: `docker-build-check`**: Utilizes Docker Buildx to compile `podtriage:ci` and executes containerized smoke tests inside the runner.
-  3. **Job 3: `k8s-manifest-lint`**: Parses and validates multi-document YAML syntax across all files in `k8s/*.yaml` before merging.
+### 3. GitHub Actions: Multi-Stage CI/CD Validation Pipeline
+- **Workflow Configuration**: `.github/workflows/ci.yml`
+- **Execution Triggers**: Configured for every `push` and `pull_request` against `main`.
+- **Pipeline Stages**:
+  1. **Job 1: `lint-and-validate`**: Checks Python compilation syntax via `py_compile`, verifies simulated cluster scan execution (`--simulate`), and tests structured JSON output (`--json`).
+  2. **Job 2: `docker-build-check`**: Sets up Docker Buildx, compiles the production container image (`podtriage:ci`), and validates containerized CLI execution.
+  3. **Job 3: `k8s-manifest-lint`**: Performs YAML structural linting and syntax verification across all Kubernetes manifests in `k8s/*.yaml`.
+
+### 4. Single-Page SRE Web Incident Dashboard
+- **File**: `index.html` (Standalone, zero-dependency HTML5 application).
+- **Aesthetic**: Warm beige and soft off-white editorial palette featuring deep ink typography, clean border contrasts, and distinct status badges.
+- **Key Capabilities**:
+  - **Cluster Telemetry**: Live metrics cards tracking Total Pods, Degraded Workloads, Healthy Workloads, and MTTD.
+  - **Dynamic Filtering**: Filter table rows dynamically by namespace (`All`, `production`, `monitoring`, `default`) and search query.
+  - **Inspection Drawer**: Clickable workload rows reveal an interactive diagnostic inspection drawer with root-cause logs and one-click copyable `kubectl` remediation commands.
+  - **Live Scan Trigger**: Interactive trigger button with real-time progress indicators and simulated incident generation.
 
 ---
 
-## 🔄 Git Workflow & Commit History Showcase
+## Git Workflow and Commit History Showcase
 
-The project was constructed following strict, discipline-driven Git version control practices with incremental, single-responsibility semantic commits:
+The project was constructed following disciplined, single-responsibility Git version control practices with sequential semantic commits:
 
 | Commit # | Hash | Scope / Milestone | Commit Message | Key Accomplishments |
 | :---: | :---: | :--- | :--- | :--- |
-| **#1** | `053fd4f` | **Core Engine** | `feat(core): implement kubernetes pod diagnostic triage engine and cli scanner` | Initialized repository, built `podtriage.py` with exit-code analysis, simulated fallback mode, and ASCII diagnostic box. |
+| **#1** | `053fd4f` | **Core Engine** | `feat(core): implement kubernetes pod diagnostic triage engine and cli scanner` | Initialized repository, built `podtriage.py` with exit-code analysis, simulated fallback mode, and ASCII diagnostic output. |
 | **#2** | `d66491c` | **Docker** | `feat(docker): package podtriage diagnostic cli into lightweight alpine container` | Created hardened `Dockerfile` (Python 3.11 Alpine), configured `.dockerignore`, built and verified `podtriage:v1.0`. |
 | **#3** | `2a1a74f` | **Kubernetes** | `feat(k8s): define kubernetes rbac permissions, cronjob scanner, and test workloads` | Authored `k8s/rbac.yaml`, `k8s/cronjob.yaml` (15m scanner), and `k8s/test-workloads.yaml` (OOM reproduction workload). |
-| **#4** | `28e2254` | **CI/CD & Docs** | `docs: finalize project readme with devops tool integration proofs and ci pipeline` | Integrated `.github/workflows/ci.yml` (3 CI jobs), generated proof screenshots, and structured comprehensive README. |
-| **#5** | `72a2616` | **Academic Polish** | `docs: update author and submission details to Paras Sarnobat` | Updated project submission details, author credentials, and academic evaluation metadata. |
-
-### Visual Git Milestone Log
-![Git Commits History](screenshots/05-git-commits-history.png)
-*Figure 5: Terminal git log verifying sequential semantic commit milestones and remote synchronization with GitHub main.*
-
----
-
-## 📸 Implementation Proof Gallery
-
-### 1. Core CLI Diagnostic Output
-*Live terminal diagnostic table rendering namespaces, degraded health states, restart counts, root causes, and actionable fixes.*
-
-![Core CLI Diagnostic Output](screenshots/01-cli-execution.png)
-*Figure 1: PodTriage terminal diagnostic scan rendering degraded workload states and SRE remediation guidance.*
+| **#4** | `28e2254` | **CI/CD & Docs** | `docs: finalize project readme with devops tool integration proofs and ci pipeline` | Integrated `.github/workflows/ci.yml` (3 CI jobs), generated proof screenshots, and structured technical documentation. |
+| **#5** | `72a2616` | **Academic Polish** | `docs: update author and submission details to Prachi Patil` | Updated project submission details, author credentials, and academic evaluation metadata. |
+| **#6** | `f5f8f38` | **Styling Polish** | `docs: restyle readme to match devpulse layout and add visual git commits showcase` | Restyled documentation structure, refined badge aesthetics, and generated visual commit history assets. |
+| **#7** | `d7edc69` | **Web Dashboard** | `feat(web): add single-page beige and off-white sre incident dashboard` | Implemented standalone SRE incident web dashboard (`index.html`) with telemetry metrics, filters, and inspection drawer. |
+| **#8** | *Current* | **Final Overhaul** | `docs: complete formal documentation overhaul, student info block, and full visual proof gallery` | Formalized documentation, updated academic info block, and incorporated complete 7-figure visual proof gallery. |
 
 ---
 
-### 2. Docker Containerization & Verification
-*Building the lightweight Alpine container image (`podtriage:v1.0`) and validating container execution.*
+## Implementation Proof Gallery
 
-![Docker Containerization Verification](screenshots/02-docker-build.png)
-*Figure 2: Docker build output and successful zero-dependency containerized execution test.*
+### Figure 1: Core CLI Incident Diagnostic Output
+Live terminal diagnostic table rendering namespaces, degraded health states, container restart counts, root-cause analysis, and actionable remediation commands.
 
----
-
-### 3. Kubernetes Orchestration & Manifest Validation
-*Client dry-run validation confirming Kubernetes RBAC, scheduled CronJob, and OOM test workload definitions.*
-
-![Kubernetes Manifest Validation](screenshots/03-k8s-manifests.png)
-*Figure 3: Client dry-run validation output proving syntax and API schema validity across all Kubernetes manifests.*
+![Figure 1: Core CLI Incident Diagnostic Output](screenshots/01-cli-execution.png)
 
 ---
 
-### 4. GitHub Actions CI/CD Pipeline Execution
-*Automated 3-stage validation pipeline running code linting, container builds, and Kubernetes manifest validation.*
+### Figure 2: Lightweight Alpine Docker Container Build and Execution
+Docker build execution creating the Alpine-based container image (`podtriage:v1.0`) followed by zero-dependency container test verification.
 
-![GitHub Actions CI/CD Pipeline](screenshots/04-github-actions.png)
-*Figure 4: GitHub Actions CI/CD pipeline verifying all 3 jobs passed successfully on branch main.*
+![Figure 2: Docker Container Build and Execution](screenshots/02-docker-build.png)
 
 ---
 
-## 🚀 Quick Start & Local Setup Guide
+### Figure 3: Kubernetes Manifests Client Dry-Run Validation
+Client dry-run validation confirming Kubernetes RBAC authorization, scheduled CronJob scanner, and OOM test workload definitions.
+
+![Figure 3: Kubernetes Manifest Validation](screenshots/03-k8s-manifests.png)
+
+---
+
+### Figure 4: GitHub Actions Multi-Stage CI/CD Pipeline
+Automated 3-stage validation pipeline running code linting, container builds, and Kubernetes manifest validation with all jobs passing.
+
+![Figure 4: GitHub Actions CI/CD Pipeline](screenshots/04-github-actions.png)
+
+---
+
+### Figure 5: Complete Git Commit Milestone History
+Terminal git log verifying sequential semantic commit milestones and remote synchronization with GitHub main.
+
+![Figure 5: Git Commit History Showcase](screenshots/05-git-commits-history.png)
+
+---
+
+### Figure 6: SRE Web Incident Dashboard Overview
+Full overview of the single-page SRE Web Dashboard in warm beige and off-white theme, showcasing cluster telemetry cards and diagnostic table.
+
+![Figure 6: SRE Web Incident Dashboard Overview](screenshots/06-web-dashboard-preview.png)
+
+---
+
+### Figure 7: Diagnostic Inspection Drawer and Remediation Interface
+Workload deep-dive inspection drawer displaying root-cause log traces and copyable `kubectl` remediation commands.
+
+![Figure 7: Diagnostic Inspection Drawer and Remediation Interface](screenshots/07-web-inspector-modal.png)
+
+---
+
+## Installation and Operational Guide
 
 ### Prerequisites
 - Python 3.10+
 - Docker Engine 24.0+
-- `kubectl` CLI (optional; automated high-fidelity fallback activates if cluster is offline)
+- Kubernetes CLI (`kubectl`) or any compatible cluster (optional; automated high-fidelity simulation activates if offline)
 
 ### Option A: Local Python Execution
 ```bash
@@ -194,34 +240,34 @@ The project was constructed following strict, discipline-driven Git version cont
 git clone https://github.com/Durvankur-aiml/podtraige.git
 cd podtraige
 
-# Run cluster diagnostic scan across all namespaces
+# Execute cluster diagnostic scan across all namespaces
 python podtriage.py
 
 # Filter triage to a specific namespace
 python podtriage.py -n production
 
-# Export structured JSON diagnostics (for SIEM, PagerDuty, or Slack webhooks)
+# Export structured JSON diagnostics for SIEM / webhook integration
 python podtriage.py --json
 
-# Force benchmark simulation mode
+# Run explicitly in simulated production benchmark mode
 python podtriage.py --simulate
 ```
 
 ### Option B: Docker Container Execution
 ```bash
-# Build the production container image
+# Build the production Alpine container image
 docker build -t podtriage:v1.0 .
 
-# Run the diagnostic container
+# Execute the diagnostic container
 docker run --rm podtriage:v1.0
 
-# Run container in simulation mode
+# Execute container in simulation mode
 docker run --rm podtriage:v1.0 --simulate
 ```
 
 ### Option C: Kubernetes In-Cluster Deployment
 ```bash
-# Validate manifests via dry-run
+# Validate manifests via client dry-run
 kubectl apply -f k8s/ --dry-run=client
 
 # Deploy RBAC permissions and 15-minute scheduled CronJob scanner
@@ -238,21 +284,36 @@ kubectl create job --from=cronjob/podtriage-scheduled-scan manual-scan-01
 kubectl logs job/manual-scan-01
 ```
 
----
+### Option D: SRE Web Incident Dashboard
+```bash
+# Launch a local HTTP server from the project root
+python -m http.server 8000
 
-## 📋 Academic & Evaluation Metadata
-
-| Field | Detail |
-| :--- | :--- |
-| **Project Title** | `podtriage` - Kubernetes Pod Health & Incident Triage Engine |
-| **Subject / Course** | DevOps and Kubernetes (ISE-2) |
-| **Student Name** | **Paras Sarnobat** |
-| **Assessment Type** | In-Semester Evaluation 2 (ISE-2) |
-| **Repository URL** | [https://github.com/Durvankur-aiml/podtraige.git](https://github.com/Durvankur-aiml/podtraige.git) |
-| **Primary Branch** | `main` |
-| **DevOps Tools Covered** | Docker, Kubernetes (RBAC & CronJobs), GitHub Actions CI/CD, Git Version Control |
+# Open your browser and navigate to:
+# http://localhost:8000
+```
 
 ---
 
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Academic Evaluation and Submission Summary
+
+| Evaluation Parameter | Specification | Verification Status |
+| :--- | :--- | :--- |
+| **Project Title** | PodTriage - Kubernetes Incident-Response & Pod Diagnostic Engine | Complete |
+| **Course & Assessment** | DevOps and Kubernetes (ISE-2) | Complete |
+| **Student Name** | Prachi Patil | Verified |
+| **Roll Number** | A58 | Verified |
+| **Branch / Department** | Artificial Intelligence and Data Science / AIML | Verified |
+| **Institute** | D. Y. Patil College of Engineering and Technology | Verified |
+| **Primary Repository** | https://github.com/Durvankur-aiml/podtraige | Verified |
+| **Docker Integration** | Multi-stage / Alpine Dockerfile, `.dockerignore`, container verification | Passed |
+| **Kubernetes Integration** | Least-privilege RBAC (`rbac.yaml`), CronJob scanner (`cronjob.yaml`), failure workloads | Passed |
+| **CI/CD Pipeline** | GitHub Actions 3-stage validation pipeline (`ci.yml`) | Passed |
+| **Web Dashboard** | Standalone SRE incident dashboard (`index.html`) | Passed |
+| **Visual Proof Gallery** | 7 comprehensive visual proof screenshots in `screenshots/` | Complete |
+
+---
+
+## License
+
+This project is open-source software licensed under the [MIT License](LICENSE).
